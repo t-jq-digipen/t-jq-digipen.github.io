@@ -90,12 +90,12 @@ const entities = {
         "Set up how the engine reads sprite sheets, and walked our artist through it",
         "Helped visualise VFX animations",
         "Project manager across programmers, a designer and an artist",
-        "All artwork by Kelly Keli Goh" ] },
+        "All final artwork completed by our artist" ] },
       { title: "Links", links: [["Code and write-up", "https://github.com/t-jq-digipen/Rock-and-Ghoul"]] }
     ],
     assets: [
       { name: "Combat clip", type: "video", src: "assets/rock-and-ghoul.mp4", poster: "assets/rock-and-ghoul-poster.jpg" },
-      { folder: "Animation drafts", notes: ["Minimal drafts, just to help convey the direction we wanted", "Made in Clip Studio Paint", "Final art by Kelly Keli Goh"], items: [
+      { folder: "Animation drafts", notes: ["Minimal drafts, just to help convey the direction we wanted", "Made in Clip Studio Paint", "Final art completed by our artist"], items: [
         { name: "Sound travelling across floor before erupting", type: "image", src: "assets/rag/drafts/sound-across-floor.gif", frames: 16 },
         { name: "Sound blast around player", type: "image", src: "assets/rag/drafts/sound-blast-around-player.gif", frames: 13 },
         { name: "Sound blast travels up before falling down", type: "image", src: "assets/rag/drafts/sound-blast-up-and-down.gif", frames: 23 },
