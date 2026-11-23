@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tan Jun Quan | Portfolio</title>
+<meta name="description" content="Portfolio of Tan Jun Quan: game programming in C and C++, pixel art and animation, and design.">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Tan Jun Quan | Portfolio">
+<meta property="og:description" content="Trained in product design, now making games from both ends: the C++ underneath and the pixel art on top.">
+<meta property="og:url" content="https://t-jq-digipen.github.io/">
+<meta property="og:image" content="https://t-jq-digipen.github.io/assets/preview.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* Palette taken from Dear ImGui's dark style, the toolkit behind the Rock & Ghoul editor */
+  :root {
+    --bg: #0F1117;          /* window background */
+    --panel: #151821;
+    --frame: #1F2433;       /* input fields */
+    --title: #29324A;       /* panel title bars */
+    --header: #2B4F80;      /* selected / header blue */
+    --accent: #4296FA;      /* ImGui's check-mark blue */
+    --art: #E8A04B;         /* warm marker for the art component */
+    --text: #E4E7EE;
+    --dim: #8C93A6;
+    --line: #2A3042;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "IBM Plex Sans Condensed", system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.45;
+  }
+  img, video { display: block; max-width: 100%; }
+  a { color: var(--accent); }
+  button { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---------- Window chrome ---------- */
+  .menubar {
+    display: flex; align-items: center; gap: 1.5rem;
+    height: 34px; padding: 0 14px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+    font-size: 14px;
+  }
+  .menubar strong { font-weight: 600; letter-spacing: .01em; }
+  .menubar nav { display: flex; gap: 1.1rem; }
+  .menubar nav a { color: var(--dim); text-decoration: none; }
+  .menubar nav a:hover { color: var(--text); }
+  .menubar .file { margin-left: auto; color: var(--dim); font-family: "IBM Plex Mono", monospace; font-size: 12.5px; }
+
+  .editor {
+    display: grid;
+    grid-template-columns: 230px minmax(0, 1fr) 360px;
+    grid-template-rows: minmax(0, 1fr) 250px;
+    grid-template-areas:
+      "hier scene insp"
+      "hier assets insp";
+    height: calc(100vh - 34px);
+    min-height: 640px;
+    gap: 1px;
+    background: var(--line);
+  }
+  .panel { background: var(--panel); display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+  .panel > h2 {
+    margin: 0; padding: 5px 10px;
+    background: var(--title);
+    font-size: 13px; font-weight: 500;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .panel > h2::before { content: ""; width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 6px solid var(--dim); }
+  .panel-body { padding: 10px; overflow: auto; min-height: 0; flex: 1; scrollbar-color: var(--title) transparent; }
+
+  /* ---------- Hierarchy ---------- */
+  .hier { grid-area: hier; }
+  .tree { list-style: none; margin: 0; padding: 0; }
+  .tree ul { list-style: none; margin: 0; padding: 0 0 0 16px; border-left: 1px dotted var(--line); margin-left: 9px; }
+  .tree button {
+    display: flex; align-items: center; gap: 8px;
+    width: 100%; padding: 5px 8px;
+    background: none; border: 0; border-radius: 3px;
+    text-align: left; cursor: pointer;
+  }
+  .tree button:hover { background: var(--frame); }
+  .tree button[aria-selected="true"] { background: var(--header); }
+  .tree .icon { width: 12px; height: 12px; border: 1.5px solid var(--dim); border-radius: 2px; flex: none; }
+  .tree button[aria-selected="true"] .icon { border-color: var(--text); background: var(--accent); }
+  .tree .group { padding: 10px 8px 4px; color: var(--dim); font-size: 13px; }
+  .hint { margin: 14px 8px 0; color: var(--dim); font-size: 13px; }
+
+  /* ---------- Scene view ---------- */
+  .scene { grid-area: scene; }
+  .scene .panel-body {
+    padding: 0;
+    display: grid; place-items: center; grid-template-columns: minmax(0, 1fr);
+    background-color: #0B0D12;
+    background-image:
+      linear-gradient(rgba(66,150,250,.07) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(66,150,250,.07) 1px, transparent 1px);
+    background-size: 32px 32px;
+    position: relative;
+  }
+  .viewport { width: min(92%, 980px); position: relative; }
+  .viewport video, .viewport img, .viewport .todo { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; }
+  .gizmo { position: absolute; inset: -6px; border: 1px solid var(--accent); pointer-events: none; }
+  .gizmo::before, .gizmo::after { content: ""; position: absolute; width: 8px; height: 8px; background: var(--accent); }
+  .gizmo::before { top: -4px; left: -4px; }
+  .gizmo::after { bottom: -4px; right: -4px; }
+  .scene-tag { position: absolute; top: 10px; left: 12px; font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--dim); }
+
+  /* the "player" entity: a title card instead of a clip */
+  .intro { padding: 2.5rem 2rem; text-align: left; }
+  .intro h1 {
+    margin: 0 0 1rem;
+    font-size: clamp(2.4rem, 4.6vw, 5rem);
+    font-weight: 700; line-height: .95; letter-spacing: -.02em; white-space: nowrap;
+  }
+  .mobile-only { display: none; }
+  /* shown on small screens only */
+  .desktop-note { display: none; }
+
+  /* landing-page guide: labels at the scene's edges pointing at the panels to use */
+  .guide-tag {
+    position: absolute; display: flex; align-items: center; gap: 8px;
+    padding: 7px 13px; border: 1.5px solid var(--art); border-radius: 3px;
+    background: rgba(31,36,51,.94); color: var(--text); font-size: 15px; font-weight: 500; white-space: nowrap;
+  }
+  .guide-tag b { color: var(--art); font-size: 20px; line-height: 1; }
+  .g-hier { left: 12px; top: 12px; }
+  .g-insp { right: 12px; top: 12px; }
+  .g-assets { left: 50%; bottom: 14px; transform: translateX(-50%); }
+  /* top-bar links briefly outline the panel or component they point to */
+  .flash { outline: 2px solid var(--art); outline-offset: -2px; }
+  @media (prefers-reduced-motion: no-preference) {
+    .flash { animation: flash 1.8s ease-out forwards; }
+    @keyframes flash { 0%, 55% { outline-color: var(--art); } 100% { outline-color: transparent; } }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .g-hier b { animation: nudge-l 1.6s ease-in-out infinite; }
+    .g-insp b { animation: nudge-r 1.6s ease-in-out infinite; }
+    .g-assets b { animation: nudge-d 1.6s ease-in-out infinite; }
+    @keyframes nudge-l { 50% { transform: translateX(-4px); } }
+    @keyframes nudge-r { 50% { transform: translateX(4px); } }
+    @keyframes nudge-d { 50% { transform: translateY(4px); } }
+  }
+
+  /* HUD preview: point visitors at the sliders until they use them */
+  .try-note { margin: 6px 0 10px; color: var(--text); font-size: 13px; }
+  .try-note b { color: var(--accent); }
+  .try-note .down { display: none; }
+  .component.try-me { outline: 2px dashed var(--accent); outline-offset: 2px; }
+  .intro p { margin: 0; max-width: 34ch; font-size: clamp(1.1rem, 1.8vw, 1.35rem); color: #C8CDDA; }
+  .intro p + p { margin-top: 1.25rem; font-size: 14px; color: var(--dim); }
+
+  /* ---------- Inspector ---------- */
+  .insp { grid-area: insp; }
+  .entity-name {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 8px; margin-bottom: 10px;
+    background: var(--frame); border-radius: 3px;
+    font-weight: 600; font-size: 16px;
+  }
+  .entity-name input { accent-color: var(--accent); margin: 0; }
+  .component { margin-bottom: 10px; border: 1px solid var(--line); border-radius: 3px; }
+  .component > h3 {
+    margin: 0; padding: 5px 9px;
+    background: var(--title);
+    font-size: 13.5px; font-weight: 600;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .component > h3::before { content: ""; width: 8px; height: 8px; border-radius: 1px; background: var(--accent); }
+  .component.art > h3::before { background: var(--art); }
+  .component.team > h3::before { background: var(--dim); }
+  .component-body { padding: 8px 9px 10px; }
+  .component dl { margin: 0; }
+  .about { margin: 0; font-size: 14px; line-height: 1.55; color: #C8CDDA; }
+  .about + .about { margin-top: .7em; }
+  .field { display: grid; grid-template-columns: 82px minmax(0, 1fr); gap: 8px; align-items: baseline; }
+  .field + .field { margin-top: 6px; }
+  .field dt { color: var(--dim); font-size: 13px; }
+  .field dd { user-select: all; margin: 0; padding: 3px 7px; background: var(--frame); border-radius: 2px; font-family: "IBM Plex Mono", monospace; font-size: 12.5px; }
+  .items { margin: 0; padding: 0; list-style: none; }
+  .items li { position: relative; padding-left: 14px; font-size: 14px; }
+  .items li + li { margin-top: 7px; }
+  .items li::before { content: ""; position: absolute; left: 0; top: .55em; width: 6px; height: 6px; border: 1.5px solid var(--accent); }
+  .art .items li::before { border-color: var(--art); }
+  .team .items li::before { border-color: var(--dim); }
+  .links { display: flex; flex-wrap: wrap; gap: 6px; }
+  .links a {
+    display: inline-block; padding: 4px 10px;
+    background: var(--header); color: var(--text);
+    border-radius: 3px; text-decoration: none; font-size: 13.5px;
+  }
+  .links a:hover { background: var(--accent); }
+
+  
+  /* ---------- Assets browser ---------- */
+  .assets { grid-area: assets; }
+  .assets .panel-body { padding: 8px 10px 14px; overflow-y: auto; }
+  .crumb { margin: 0 0 8px; font-family: "IBM Plex Mono", monospace; font-size: 12.5px; color: var(--dim); }
+  .crumb b { color: var(--text); font-weight: 500; }
+  .crumb-link { background: none; border: 0; padding: 0; color: var(--dim); cursor: pointer; font: inherit; }
+  .crumb-link:hover { color: var(--accent); text-decoration: underline; }
+  .crumb-link.here { color: var(--text); cursor: default; text-decoration: none; }
+  .shelf { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 10px; padding-bottom: 16px; }
+  .assets .crumb { position: sticky; top: -8px; z-index: 1; margin: -8px -10px 8px; padding: 8px 10px 6px; background: var(--panel); }
+  .asset {
+    display: flex; flex-direction: column; gap: 5px;
+    padding: 6px; background: var(--frame); border: 1px solid var(--line); border-radius: 3px;
+    cursor: pointer; text-align: left;
+  }
+  .asset:hover { border-color: var(--accent); }
+  .asset[aria-pressed="true"] { border-color: var(--art); }
+  .asset .thumb { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; background: #0B0D12; }
+  .asset .thumb.pixel { object-fit: contain; padding: 8px; }
+  .asset .thumb.todo { font-size: 10.5px; padding: 4px; word-break: break-all; }
+  .asset span { font-size: 12.5px; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.5em; }
+  .asset small { color: var(--dim); font-family: "IBM Plex Mono", monospace; font-size: 11px; }
+  .asset.folder .thumb { display: grid; place-items: center; background: var(--title); }
+  .asset.folder svg { width: 40px; height: 32px; }
+  .pixel { image-rendering: pixelated; }
+  /* pixel art shown smaller than its real size: smooth it, or whole pixel rows get skipped */
+  .pixel.soft { image-rendering: auto; }
+  .zoom { position: relative; height: min(56vh, 470px); overflow: hidden; background: #0B0D12; border-radius: 3px;
+    cursor: grab; touch-action: none; user-select: none; }
+  .zoom:active { cursor: grabbing; }
+  .zoom:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .hud-view ~ .stage-media .zoom { height: min(30vh, 240px); }
+  .stage .zoom img.pixel { position: absolute; left: 0; top: 0; transform-origin: 0 0; max-width: none; max-height: none; object-fit: fill; }
+  .zoom-bar { position: absolute; right: 8px; bottom: 8px; display: flex; gap: 4px; align-items: center;
+    padding: 4px; background: var(--title); border: 1px solid var(--line); border-radius: 3px; cursor: default; }
+  .zoom-bar button { min-width: 28px; height: 24px; padding: 0 7px; border: 0; border-radius: 2px;
+    background: var(--frame); color: inherit; font: inherit; font-size: 13px; cursor: pointer; }
+  .zoom-bar button:hover { background: var(--accent); }
+  .zoom-bar output { min-width: 50px; text-align: center; font-family: "IBM Plex Mono", monospace; font-size: 12px; }
+  .zoom-hint { padding: 0 8px 0 4px; color: var(--dim); font-size: 12px; }
+  .stage { width: min(92%, 900px); text-align: center; }
+  .stage img, .stage video, .stage .todo { width: 100%; max-height: min(56vh, 480px); object-fit: contain; background: #0B0D12; aspect-ratio: auto; }
+  .stage .todo { aspect-ratio: 1; }
+  .stage img.pixel { width: 100%; height: min(52vh, 420px); max-height: none; object-fit: contain; background: transparent; }
+  .stage-media { max-width: 100%; }
+  .stage-media.strip { overflow-x: auto; padding-bottom: 8px; }
+  .hud-view { margin-bottom: 14px; }
+  .hud-view canvas { width: 100%; height: auto; image-rendering: pixelated; display: block; }
+  .slider { display: grid; grid-template-columns: 82px minmax(0, 1fr); gap: 8px; align-items: center; }
+  .slider + .slider { margin-top: 6px; }
+  .slider span { color: var(--dim); font-size: 13px; }
+  .slider label { position: relative; display: block; }
+  .slider input { -webkit-appearance: none; appearance: none; width: 100%; height: 22px; margin: 0;
+    background: var(--frame); border-radius: 2px; cursor: ew-resize; }
+  .slider input::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 18px; border-radius: 2px; background: var(--accent); }
+  .slider input::-moz-range-thumb { width: 12px; height: 18px; border: 0; border-radius: 2px; background: var(--accent); }
+  .slider input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .slider output { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none;
+    font-family: "IBM Plex Mono", monospace; font-size: 12.5px; }
+  .stage-media.strip img { width: auto; height: 160px; max-width: none; max-height: none; }
+  .back { margin-top: 12px; padding: 5px 12px; background: var(--header); border: 0; border-radius: 3px; cursor: pointer; }
+  .back:hover { background: var(--accent); }
+  .history { margin: 0; padding: 0; list-style: none; }
+  .history li { display: grid; grid-template-columns: 42px 1fr; gap: 8px; font-size: 13.5px; }
+  .history li + li { margin-top: 8px; }
+  .history time { font-family: "IBM Plex Mono", monospace; font-size: 12.5px; color: var(--accent); padding-top: 1px; }
+  .history small { display: block; color: var(--dim); }
+  .preview-btn {
+    margin-left: 6px; padding: 1px 8px; vertical-align: 1px;
+    background: var(--header); border: 0; border-radius: 3px; cursor: pointer;
+    font-size: 12px;
+  }
+  .preview-btn:hover { background: var(--accent); }
+  .open-btn { margin-top: 10px; padding: 5px 12px; background: var(--header); border: 0; border-radius: 3px; cursor: pointer; font-size: 13.5px; }
+  .open-btn:hover { background: var(--accent); }
+
+  /* placeholders to replace */
+  .todo {
+    display: grid; place-items: center; padding: 1rem;
+    border: 1.5px dashed var(--dim); color: var(--dim); text-align: center;
+    background: repeating-linear-gradient(45deg, transparent 0 12px, rgba(140,147,166,.08) 12px 24px);
+  }
+  .todo-text { background: rgba(232,160,75,.18); outline: 1px dashed var(--art); padding: 0 .2em; }
+
+  /* ---------- Small screens: panels stack ---------- */
+  @media (max-width: 980px) {
+    .editor {
+      height: auto; min-height: 0;
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: auto;
+      grid-template-areas: "hier" "scene" "assets" "insp";
+    }
+    .hier .panel-body { padding: 8px; }
+    .tree, .tree ul { display: flex; flex-wrap: wrap; gap: 4px; border: 0; padding: 0; margin: 0; }
+    .tree .group, .hint { display: none; }
+    .tree li { display: contents; }
+    .tree button { width: auto; }
+    .scene .panel-body { padding: 1.25rem 0; }
+    .viewport { width: calc(100% - 2.5rem); }
+    .scene-tag { display: none; }
+    .guide { display: none; }
+    .mobile-only { display: block; }
+    .desktop-note { display: flex; align-items: center; gap: 10px; margin: 0; padding: 8px 12px;
+      background: rgba(232,160,75,.14); border-bottom: 1px solid var(--art); font-size: 13.5px; }
+    .desktop-note span { flex: 1; }
+    .desktop-note button { border: 0; background: none; color: var(--text); font-size: 20px; line-height: 1; padding: 2px 6px; cursor: pointer; }
+    .desktop-note[hidden] { display: none; }
+    .try-note .right { display: none; }
+    .try-note .down { display: inline; }
+    .menubar nav { display: none; }
+    .assets .panel-body { overflow: visible; }
+    .shelf { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .viewport { animation: none; }
+    .viewport.swap { animation: settle .25s ease-out; }
+    @keyframes settle { from { opacity: .3; transform: scale(.985); } to { opacity: 1; transform: none; } }
+  }
+</style>
+</head>
+<body>
+
+<header class="menubar">
+  <strong>Tan Jun Quan</strong>
+  <nav aria-label="Sections">
+    <a href="#hier" id="projectsLink">Projects</a>
+    <a href="#" id="contactLink">Contact</a>
+  </nav>
+  <span class="file">portfolio.scene</span>
+</header>
+
+<p class="desktop-note" role="note">
+  <span>This portfolio is laid out like a game engine editor, so it's best viewed on a desktop.</span>
+  <button type="button" aria-label="Dismiss">&times;</button>
+</p>
+
+<div class="editor">
+  <!-- Hierarchy -->
+  <section class="panel hier" id="hier" aria-label="Hierarchy">
+    <h2>Hierarchy</h2>
+    <div class="panel-body">
+      <ul class="tree" role="tablist" aria-label="Projects">
+        <li><button role="tab" aria-selected="true" data-entity="me"><span class="icon"></span>Tan Jun Quan</button></li>
+        <li class="group">Games</li>
+        <li>
+          <ul>
+            <li><button role="tab" aria-selected="false" data-entity="rag"><span class="icon"></span>Rock &amp; Ghoul</button></li>
+            <li><button role="tab" aria-selected="false" data-entity="hard"><span class="icon"></span>HA:RD</button></li>
+            <li><button role="tab" aria-selected="false" data-entity="waffle"><span class="icon"></span>WAFFLE RUSH</button></li>
+          </ul>
+        </li>
+        <li class="group">Other work</li>
+        <li>
+          <ul>
+            <li><button role="tab" aria-selected="false" data-entity="graphics"><span class="icon"></span>Illustration and graphics</button></li>
+            <li><button role="tab" aria-selected="false" data-entity="making"><span class="icon"></span>Making things</button></li>
+          </ul>
+        </li>
+      </ul>
+      <p class="hint">Select a project to load it. The inspector shows the code and the art I made for it, and Assets holds its clips and animations.</p>
+    </div>
+  </section>
+
+  <!-- Scene -->
+  <section class="panel scene" aria-label="Scene">
+    <h2>Scene</h2>
+    <div class="panel-body" id="scene" aria-live="polite"></div>
+  </section>
+
+  <!-- Inspector -->
+  <section class="panel insp" aria-label="Inspector">
+    <h2>Inspector</h2>
+    <div class="panel-body" id="inspector"></div>
+  </section>
+
+  <!-- Assets: media for the selected entity -->
+  <section class="panel assets" id="assets" aria-label="Assets">
+    <h2>Assets</h2>
+    <div class="panel-body" id="assetsBody"></div>
+  </section>
+</div>
+
+<!-- All the text and files shown on the page live in content.js -->
+<script src="content.js"></script>
+<script>
+const sceneEl = document.getElementById("scene");
+const inspEl = document.getElementById("inspector");
+const assetsEl = document.getElementById("assetsBody");
+const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+let current = "me";
+let assetPath = [];
+
+function renderComponent(c) {
+  let body = "";
+  if (c.fields) body = `<dl>${c.fields.map(([k, v]) => `<div class="field"><dt>${k}</dt><dd>${v}</dd></div>`).join("")}</dl>`;
+  if (c.items) body = `<ul class="items">${c.items.map(i => `<li>${i}</li>`).join("")}</ul>`;
+  if (c.history) body = `<ol class="history">${c.history.map(([y, t, w]) => `<li><time>${y}</time><span>${t}<small>${w}</small></span></li>`).join("")}</ol>`;
+  if (c.sliders) body = c.sliders.map(([k, key, min, max, v]) =>
+    `<div class="slider"><span>${k}</span><label><input type="range" data-key="${key}" min="${min}" max="${max}" step="1" value="${v}" aria-label="${k}"><output>${v}</output></label></div>`).join("");
+  if (c.text) body = c.text.map(p => `<p class="about">${p}</p>`).join("");
+  if (c.links) body = `<div class="links">${c.links.map(([t, u]) => `<a href="${u}"${/^https?:/.test(u) ? ' target="_blank" rel="noopener"' : ""}>${t}</a>`).join("")}</div>`;
+  return `<section class="component${c.kind ? " " + c.kind : ""}"><h3>${c.title}</h3><div class="component-body">${body}</div></section>`;
+}
+
+function inspectorHTML(name, components) {
+  return `<div class="entity-name"><input type="checkbox" checked disabled aria-label="Active">${name}</div>` +
+    components.map(renderComponent).join("");
+}
+
+// Media that shows a labelled placeholder until you add the file
+function media(a, cls) {
+  if (a.type === "video") {
+    const auto = cls === "thumb" || reduced ? "" : "autoplay";
+    return `<video class="${cls}" src="${a.src}" poster="${a.poster || ""}" ${auto} muted loop playsinline ${cls !== "thumb" ? "controls" : ""}></video>`;
+  }
+  const px = a.type === "pixel" ? " pixel" : "";
+  return `<img class="${cls}${px}" src="${a.src}" alt="${a.name}"${px ? ' onload="fitRendering(this)"' : ""}
+    onerror="this.outerHTML='<div class=&quot;${cls} todo&quot;>${a.name}<br>${a.src}</div>'">`;
+}
+
+// Pixel art: enlarge by whole numbers only (2x, 3x...) so every pixel stays the same size,
+// and smooth it when it has to be shown smaller than its real size
+function fitRendering(img) {
+  if (!img.naturalWidth || img.closest(".zoom")) return;
+  img.style.padding = "";                        // back to the padding the stylesheet gives
+  const cs = getComputedStyle(img);
+  const pl = parseFloat(cs.paddingLeft), pr = parseFloat(cs.paddingRight);
+  const pt = parseFloat(cs.paddingTop), pb = parseFloat(cs.paddingBottom);
+  const w = img.offsetWidth - pl - pr, h = img.offsetHeight - pt - pb;
+  if (w <= 0 || h <= 0) return;
+  const s = Math.min(w / img.naturalWidth, h / img.naturalHeight);
+  img.classList.toggle("soft", s < 1);
+  if (s < 1) return;
+  const k = Math.floor(s), dw = w - img.naturalWidth * k, dh = h - img.naturalHeight * k;
+  img.style.padding = `${pt + Math.floor(dh / 2)}px ${pr + Math.ceil(dw / 2)}px ${pb + Math.ceil(dh / 2)}px ${pl + Math.floor(dw / 2)}px`;
+}
+let refitQueued = false;
+window.addEventListener("resize", () => {
+  if (refitQueued) return;
+  refitQueued = true;
+  requestAnimationFrame(() => { refitQueued = false; document.querySelectorAll("img.pixel").forEach(fitRendering); });
+});
+
+// Sprite sheet viewer: scroll or pinch to zoom, drag to move
+function zoomViewer(a) {
+  return `<div class="zoom" tabindex="0" aria-label="${a.name}. Scroll or pinch to zoom, drag to move, plus and minus keys zoom, 0 fits.">
+    <img class="pixel" src="${a.src}" alt="${a.name}" draggable="false">
+    <div class="zoom-bar"><span class="zoom-hint">Scroll or pinch to zoom, drag to move</span><button data-z="out" aria-label="Zoom out">&minus;</button><output>100%</output>
+      <button data-z="in" aria-label="Zoom in">+</button><button data-z="fit">Fit</button><button data-z="one">1:1</button></div>
+  </div>`;
+}
+function startZoom(box) {
+  const img = box.querySelector("img"), out = box.querySelector("output"), hint = box.querySelector(".zoom-hint");
+  // z is the requested zoom; above 100% it is shown at whole numbers so every pixel stays the same size
+  let z = 1, s = 1, x = 0, y = 0, fit = 1, view = "best";
+  const MAX = 16;
+  const snap = v => v >= 1 ? Math.round(v) : v;
+  const clamp = () => {
+    const W = box.clientWidth, H = box.clientHeight, w = img.naturalWidth * s, h = img.naturalHeight * s;
+    x = w <= W ? (W - w) / 2 : Math.min(0, Math.max(W - w, x));
+    y = h <= H ? (H - h) / 2 : Math.min(0, Math.max(H - h, y));
+    x = Math.round(x); y = Math.round(y);
+  };
+  const apply = () => {
+    clamp();
+    img.style.transform = `translate(${x}px, ${y}px) scale(${s})`;
+    img.classList.toggle("soft", s < 1);
+    out.value = Math.round(s * 100) + "%";
+  };
+  const zoomAt = (nz, px, py) => {
+    nz = Math.min(MAX, Math.max(Math.min(fit, 1), nz));
+    let ns = snap(nz);
+    if (ns === s && nz !== z && s >= 1) ns = Math.min(MAX, Math.max(1, s + Math.sign(nz - z)));   // always move at least one step
+    z = nz === z ? ns : nz;
+    x = px - (px - x) * ns / s; y = py - (py - y) * ns / s; s = ns;
+    view = null; hint.hidden = true; apply();
+  };
+  const measure = () => { fit = Math.min(box.clientWidth / img.naturalWidth, box.clientHeight / img.naturalHeight); };
+  // whole sheet, smoothed if it has to shrink
+  const toFit = () => { measure(); z = s = fit >= 1 ? Math.floor(fit) : fit; view = "fit"; x = 0; y = 0; apply(); };
+  // opening view: the whole sheet at a whole-number size if it fits; a long strip of small sprites
+  // starts sharp at the top-left and scrolls instead of shrinking into a blur
+  const toBest = () => {
+    measure();
+    const byHeight = Math.min(4, Math.floor(box.clientHeight / img.naturalHeight));
+    z = s = Math.max(fit >= 1 ? Math.floor(fit) : 0, byHeight) || fit;
+    view = "best"; x = 0; y = 0; apply();
+  };
+  const ready = () => {
+    img.style.width = img.naturalWidth + "px"; img.style.height = img.naturalHeight + "px"; toBest();
+    new ResizeObserver(() => { if (!box.isConnected) return; view === "best" ? toBest() : view === "fit" ? toFit() : apply(); }).observe(box);
+  };
+  img.complete && img.naturalWidth ? ready() : img.addEventListener("load", ready);
+
+  box.addEventListener("wheel", ev => {
+    ev.preventDefault();
+    const r = box.getBoundingClientRect();
+    zoomAt(z * Math.exp(-ev.deltaY * 0.0015), ev.clientX - r.left, ev.clientY - r.top);
+  }, { passive: false });
+
+  const pts = new Map(); let pinch = 0;
+  box.addEventListener("pointerdown", ev => {
+    if (ev.target.closest(".zoom-bar")) return;
+    box.setPointerCapture(ev.pointerId); pts.set(ev.pointerId, [ev.clientX, ev.clientY]);
+  });
+  box.addEventListener("pointermove", ev => {
+    if (!pts.has(ev.pointerId)) return;
+    const [px, py] = pts.get(ev.pointerId); pts.set(ev.pointerId, [ev.clientX, ev.clientY]);
+    if (pts.size === 2) {
+      const [[ax, ay], [bx, by]] = [...pts.values()], d = Math.hypot(ax - bx, ay - by), r = box.getBoundingClientRect();
+      if (pinch) zoomAt(z * d / pinch, (ax + bx) / 2 - r.left, (ay + by) / 2 - r.top);
+      pinch = d;
+    } else { x += ev.clientX - px; y += ev.clientY - py; view = null; apply(); }
+  });
+  const up = ev => { pts.delete(ev.pointerId); pinch = 0; };
+  box.addEventListener("pointerup", up); box.addEventListener("pointercancel", up);
+  box.addEventListener("dblclick", ev => {
+    const r = box.getBoundingClientRect(); zoomAt(Math.max(1, s * 2), ev.clientX - r.left, ev.clientY - r.top);
+  });
+
+  const centre = () => [box.clientWidth / 2, box.clientHeight / 2];
+  const step = dir => s >= 1 || (dir > 0 && s * 1.5 >= 1) ? (dir > 0 ? Math.max(1, s + 1) : s - 1 >= 1 ? s - 1 : s / 1.5) : (dir > 0 ? s * 1.5 : s / 1.5);
+  box.querySelector(".zoom-bar").addEventListener("click", ev => {
+    const zz = ev.target.dataset.z; if (!zz) return;
+    if (zz === "in") zoomAt(step(1), ...centre());
+    if (zz === "out") zoomAt(step(-1), ...centre());
+    if (zz === "fit") toFit();
+    if (zz === "one") zoomAt(1, ...centre());
+  });
+  box.addEventListener("keydown", ev => {
+    const k = ev.key, px = 60;
+    if (k === "+" || k === "=") zoomAt(step(1), ...centre());
+    else if (k === "-") zoomAt(step(-1), ...centre());
+    else if (k === "0") toFit();
+    else if (k === "1") zoomAt(1, ...centre());
+    else if (k.startsWith("Arrow")) { x += k === "ArrowLeft" ? px : k === "ArrowRight" ? -px : 0; y += k === "ArrowUp" ? px : k === "ArrowDown" ? -px : 0; view = null; apply(); }
+    else return;
+    ev.preventDefault();
+  });
+}
+
+// pixel-art animations, plus other animated images that list how many frames they have
+function isAnimated(a) {
+  if (a.sheet || !/\.(gif|webp)$/.test(a.src)) return false;
+  return a.type === "pixel" ? a.frames !== 1 : a.type === "image" && a.frames > 1;
+}
+
+const FOLDER_SVG = `<svg viewBox="0 0 40 32"><path d="M2 6h13l4 4h19v19H2z" fill="none" stroke="#8C93A6" stroke-width="2"/></svg>`;
+
+// count files inside a list, including inside subfolders
+function countItems(list) { return list.reduce((n, a) => n + (a.folder ? countItems(a.items) : 1), 0); }
+
+// walk a folder path like ["Animations"] inside an entity's assets
+function listAt(id, path) {
+  let list = entities[id].assets;
+  for (const f of path) list = list.find(a => a.folder === f).items;
+  return list;
+}
+
+function folderTile(label, count, attrs) {
+  return `<button class="asset folder" ${attrs}><div class="thumb" aria-hidden="true">${FOLDER_SVG}</div><span>${label}</span><small>${count} ${count === 1 ? "item" : "items"}</small></button>`;
+}
+
+function renderAssets(id, path = []) {
+  assetPath = path;
+  if (id === "me") {
+    assetsEl.innerHTML = `<p class="crumb"><b>Assets</b></p><div class="shelf">${order.map(k =>
+      folderTile(entities[k].name, countItems(entities[k].assets), `data-project="${k}"`)).join("")}</div>`;
+    assetsEl.querySelectorAll("[data-project]").forEach(b => b.addEventListener("click", () => select(b.dataset.project)));
+    return;
+  }
+  const e = entities[id], list = listAt(id, path);
+  const crumbs = [`<button class="crumb-link" data-depth="-1">Assets</button>`,
+    `<button class="crumb-link" data-depth="0">${e.name}</button>`,
+    ...path.map((f, i) => `<button class="crumb-link" data-depth="${i + 1}">${f}</button>`)];
+  crumbs[crumbs.length - 1] = crumbs[crumbs.length - 1].replace('class="crumb-link"', 'class="crumb-link here" aria-current="true"');
+  assetsEl.innerHTML = `<p class="crumb">${crumbs.join(" / ")}</p><div class="shelf">${list.map((a, i) => a.folder
+      ? folderTile(a.folder, countItems(a.items), `data-folder="${a.folder}"`)
+      : `<button class="asset" data-i="${i}" aria-pressed="false">${media(a, "thumb")}<span>${a.name}</span><small>${a.sheet ? "sprite sheet" : isAnimated(a) ? "animation" : a.frames === 1 ? "pose" : a.type === "pixel" ? "image" : a.type}</small></button>`
+    ).join("")}</div>`;
+  assetsEl.querySelectorAll(".crumb-link").forEach(b => b.addEventListener("click", () => {
+    const d = +b.dataset.depth;
+    if (d < 0) select("me"); else renderAssets(id, path.slice(0, d));
+  }));
+  assetsEl.querySelectorAll("[data-folder]").forEach(b => b.addEventListener("click", () => {
+    const f = list.find(a => a.folder === b.dataset.folder);
+    renderAssets(id, [...path, f.folder]);
+    if (f.note || f.notes) inspEl.innerHTML = inspectorHTML(f.folder, [{ title: "Folder", kind: "art", items: notesHTML(f) }]);
+  }));
+  assetsEl.querySelectorAll(".asset[data-i]").forEach(b => b.addEventListener("click", () => openAsset(id, path, +b.dataset.i)));
+}
+
+function findAsset(list, name, path = []) {
+  for (let i = 0; i < list.length; i++) {
+    const a = list[i];
+    if (a.folder) { const hit = findAsset(a.items, name, [...path, a.folder]); if (hit) return hit; }
+    else if (a.name === name) return { path, i };
+  }
+  return null;
+}
+
+function notesHTML(a) {
+  const list = a.notes || (a.note ? [a.note] : []);
+  if (!list.length) return null;
+  return list.map(n => typeof n === "string" ? n
+    : `${n.text} <button class="preview-btn" data-preview="${n.preview}">Preview</button>`);
+}
+
+function openAsset(id, path, i) {
+  const e = entities[id], a = listAt(id, path)[i];
+  assetsEl.querySelectorAll(".asset[data-i]").forEach(b => b.setAttribute("aria-pressed", +b.dataset.i === i));
+  sceneEl.innerHTML = `<div class="stage"><div class="stage-media">${a.sheet ? zoomViewer(a) : media(a, "big")}</div><button class="back">Back to ${e.name}</button></div>`;
+  if (a.sheet) startZoom(sceneEl.querySelector(".zoom"));
+  // very long sprite strips: show them tall enough to read, and let them scroll sideways
+  const img = a.sheet ? null : sceneEl.querySelector(".stage img");
+  if (img) img.addEventListener("load", () => {
+    if (img.naturalWidth / img.naturalHeight > 6) img.parentElement.classList.add("strip");
+  });
+  sceneEl.querySelector(".back").addEventListener("click", () => { select(id); renderAssets(id, path); });
+  const fields = [["File", a.src.split("/").pop()], ["Folder", ["Assets", e.name, ...path].join(" / ")]];
+  // optional details for a piece: when it was made, and with what
+  if (a.made) fields.unshift(["Made with", a.made]);
+  if (a.when) fields.unshift(["When", a.when]);
+  const isAnim = isAnimated(a);
+  if (isAnim && a.frames) fields.splice(1, 0, ["Frames", a.frames]);
+  if (a.type === "pixel" && a.frames === 1) fields.splice(1, 0, ["Frames", "1 (single pose)"]);
+  const notes = notesHTML(a);
+  const comps = [{ title: isAnim ? "Animation" : a.sheet ? "Sprite sheet" : (a.type === "video" ? "Video" : "Image"), kind: "art", fields }];
+  if (notes) comps.push({ title: "Notes", kind: "art", items: notes });
+  if (a.hud) comps.splice(1, 0, { title: "HUD preview", kind: "art", sliders: [
+    ["Health", "hp", 0, a.hud.maxHp, a.hud.maxHp], ["Ammo", "ammo", 0, a.hud.maxAmmo, a.hud.maxAmmo], ["Rage", "rage", 0, a.hud.maxRage, 0]] });
+  inspEl.innerHTML = inspectorHTML(a.name, comps);
+  if (a.hud) startHud(a);
+  inspEl.querySelectorAll(".preview-btn").forEach(b => b.addEventListener("click", () => {
+    // look in the current folder first, then the whole project
+    const hit = findAsset(listAt(id, path), b.dataset.preview, path) || findAsset(e.assets, b.dataset.preview);
+    if (!hit) return;
+    renderAssets(id, hit.path);
+    openAsset(id, hit.path, hit.i);
+  }));
+}
+
+// Sword HUD: layers the health, ammo and rage rows the same way the game's UI.cpp does
+function startHud(a) {
+  const { cols, crop: [cx, cy, cw, ch], maxHp, maxAmmo, rageLoop } = a.hud;
+  const wrap = document.createElement("div");
+  wrap.className = "hud-view";
+  wrap.innerHTML = `<canvas width="${cw}" height="${ch}" aria-label="Sword HUD preview"></canvas>`;
+  sceneEl.querySelector(".stage").prepend(wrap);
+  wrap.insertAdjacentHTML("afterbegin", `<p class="try-note">Try it: drag the Health, Ammo and Rage sliders in the Inspector <b class="right">&rarr;</b><b class="down">&darr;</b></p>`);
+  const panel = inspEl.querySelector(".slider")?.closest(".component");
+  panel?.classList.add("try-me");
+  const cv = wrap.querySelector("canvas"), g = cv.getContext("2d");
+  g.imageSmoothingEnabled = false;
+  const sheet = new Image();
+  sheet.src = a.src;
+  const val = { hp: maxHp, ammo: maxAmmo, rage: 0 };
+  inspEl.querySelectorAll(".slider input").forEach(inp => inp.addEventListener("input", () => {
+    panel?.classList.remove("try-me");
+    val[inp.dataset.key] = +inp.value;
+    inp.nextElementSibling.value = inp.value;
+  }));
+  // Set_Col(left, right, t): column = left + floor((right - left + 1) * t), with t capped just under 1
+  const col = (last, t) => Math.floor((last + 1) * Math.min(Math.max(t, 0), 0.99));
+  const start = performance.now();
+  (function frame(now) {
+    if (!cv.isConnected) return;               // stop when another asset is opened
+    if (sheet.complete && sheet.naturalWidth) {
+      const w = sheet.naturalWidth / cols, h = sheet.naturalHeight / a.hud.rows;
+      const cell = (r, c) => g.drawImage(sheet, c * w + cx, r * h + cy, cw, ch, 0, 0, cw, ch);
+      g.clearRect(0, 0, cw, ch);
+      cell(0, col(cols - 1, (maxHp - val.hp) / maxHp));
+      cell(1, col(3, val.ammo / maxAmmo));
+      if (val.rage) cell(val.rage + 1, reduced ? 0 : col(3, ((now - start) / 1000 / rageLoop) % 1));
+    }
+    requestAnimationFrame(frame);
+  })(start);
+}
+
+function select(id) {
+  current = id;
+  const e = entities[id];
+  document.querySelectorAll(".tree button").forEach(b => b.setAttribute("aria-selected", b.dataset.entity === id));
+  sceneEl.innerHTML = e.scene;
+  inspEl.innerHTML = inspectorHTML(e.name, e.components);
+  renderAssets(id);
+  const vp = sceneEl.querySelector(".viewport");
+  if (vp && !reduced) { vp.classList.remove("swap"); void vp.offsetWidth; vp.classList.add("swap"); }
+  if (reduced) sceneEl.querySelectorAll("video").forEach(v => { v.removeAttribute("autoplay"); v.pause(); v.controls = true; });
+}
+
+document.querySelectorAll(".tree button").forEach(b => b.addEventListener("click", () => select(b.dataset.entity)));
+document.querySelector(".desktop-note button").addEventListener("click", e => { e.target.closest(".desktop-note").hidden = true; });
+// outline an element for a moment so the eye finds it
+function flash(el) {
+  if (!el) return;
+  el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash");
+  clearTimeout(el._flashT); el._flashT = setTimeout(() => el.classList.remove("flash"), 1900);
+}
+document.getElementById("projectsLink").addEventListener("click", ev => {
+  ev.preventDefault();
+  const hier = document.getElementById("hier");
+  hier.scrollIntoView({ block: "nearest", behavior: reduced ? "auto" : "smooth" });
+  flash(hier);
+  hier.querySelector(".tree button[aria-selected='true']")?.focus({ preventScroll: true });
+});
+document.getElementById("contactLink").addEventListener("click", ev => {
+  ev.preventDefault();
+  select("me");
+  const card = [...inspEl.querySelectorAll(".component > h3")].find(h => h.textContent === "Contact")?.closest(".component");
+  card?.scrollIntoView({ block: "nearest", behavior: reduced ? "auto" : "smooth" });
+  flash(card);
+});
+select("me");
+</script>
+</body>
+</html>
