@@ -105,6 +105,64 @@ const entities = {
     ]
   },
 
+  parkourier: {
+    name: "ParKourier",
+    scene: `<span class="scene-tag">parkourier_walkthrough.mp4</span>
+      <div class="viewport"><video src="assets/parkourier/walkthrough.mp4" poster="assets/parkourier/walkthrough-poster.jpg" autoplay muted loop playsinline aria-label="ParKourier walkthrough: sprinting, sliding, wall running and climbing across whitebox rooftops"></video><span class="gizmo"></span></div>`,
+    components: [
+      { title: "Project", fields: [
+        ["Type", "First-person parkour level, whitebox prototype"],
+        ["When", "Jul 2026"],
+        ["Team", "Solo"],
+        ["Tech", "Unity 6, C#"] ] },
+      { title: "Level design", items: [
+        "Explored how movement mechanics influence level design through whiteboxed environments",
+        "Deliver letters across rooftops using parkour movement, like a courier, hence the name Parkour-ier",
+        "Player is introduced to control mechanics gradually, guided in the direction they are supposed to traverse, and has to combine multiple movement mechanics at later stages" ] },
+      { title: "Movement", items: [
+        "Sprinting: increases momentum while grounded",
+        "Sliding: preserves momentum with a burst of speed and limited steering, and slides under obstacles such as vents",
+        "Wall running: crosses larger gaps by running across walls",
+        "Mantling: climbs over obstacles slightly higher than the player, yet not short enough to be jumped over" ] },
+      { title: "Code", items: [
+        "My first experience with Unity",
+        "Made wall running by having raycasts to the side of the player check for a valid wall that can be wall run on (white walls only, so the level can signal which walls work)",
+        "Made mantling by raycasting forward to find a wall, then raycasting downward from the highest point the player can mantle to, to find a valid floor to climb onto" ] }
+    ],
+    assets: [
+      { name: "Walkthrough", type: "video", src: "assets/parkourier/walkthrough.mp4", poster: "assets/parkourier/walkthrough-poster.jpg" },
+      { name: "Level overview", type: "image", src: "assets/parkourier/level-overview.jpg",
+        notes: ["I broke the level up into three major sections: Learning Zone, Player Exploration and Final Section"] },
+      { folder: "1. Learning Zone", notes: ["Gradually introduces the setting and guides the player to learn the different mechanics"], items: [
+        { name: "Greeted by the client", type: "image", src: "assets/parkourier/client.jpg",
+          notes: ["Upon first entry, the player is greeted by the client to provide the setting"] },
+        { name: "Framing the end goal", type: "image", src: "assets/parkourier/framing-goal.jpg",
+          notes: ["Turning around, the player is guided to the general direction they should travel towards"] },
+        { name: "Slide prompt", type: "image", src: "assets/parkourier/prompt-slide.jpg",
+          notes: ["Input prompts to guide the player into accessing crouch/slide under and jump/climbing over obstacles"] },
+        { name: "Climb prompt", type: "image", src: "assets/parkourier/prompt-climb.jpg",
+          notes: ["Input prompts to guide the player into accessing crouch/slide under and jump/climbing over obstacles"] },
+        { name: "Wall highlights", type: "image", src: "assets/parkourier/wallrun-highlight.jpg",
+          notes: ["Highlights on the wall suggest to attempt utilizing it for traversal"] },
+        { name: "Wall run across the gap", type: "image", src: "assets/parkourier/wallrun.jpg",
+          notes: ["Affordances to guide the player into accessing wall run to cross the large gap"] },
+        { name: "Learning Zone from above", type: "image", src: "assets/parkourier/learning-zone-top.jpg" }
+      ] },
+      { folder: "2. Player Exploration", notes: ["Allows the player to figure out how they would like to traverse the map, guided forward with framing and affordances"], items: [
+        { name: "Framed sub-destination", type: "image", src: "assets/parkourier/exploration-framing.jpg",
+          notes: ["Turning the corner presents the player with a framed perspective of their sub destination",
+                  "Highlighted further with a red mark on the ledge as well as a light source to guide the player forward"] },
+        { name: "Exploration view", type: "image", src: "assets/parkourier/exploration-view.jpg" },
+        { name: "Player Exploration from above", type: "image", src: "assets/parkourier/exploration-top.jpg" }
+      ] },
+      { folder: "3. Final Section", notes: ["A challenge to combine multiple mechanics"], items: [
+        { name: "Marked ledge", type: "image", src: "assets/parkourier/final-ledge.jpg",
+          notes: ["A ledge just out of reach is marked for players to reach, yet options to access are provided without direct guidance to allow players to experiment and figure out"] },
+        { name: "Final Section from above", type: "image", src: "assets/parkourier/final-top.jpg" }
+      ] }
+    ]
+  },
+
   hard: {
     name: "HA:RD",
     scene: `<span class="scene-tag">hard_trailer.mp4</span>
@@ -461,4 +519,4 @@ const entities = {
   }
 };
 
-const order = ["rag", "hard", "waffle", "graphics", "making"];
+const order = ["rag", "parkourier", "hard", "waffle", "graphics", "making"];
