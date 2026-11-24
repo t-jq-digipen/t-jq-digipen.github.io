@@ -26,7 +26,7 @@
    exact name of the asset to open.
 
    CHECK YOUR CHANGE
-   Save, then refresh editor.html in your browser. If the page goes
+   Save, then refresh index.html in your browser. If the page goes
    blank, a quote or comma is probably missing near what you changed.
    ===================================================================== */
 
@@ -75,7 +75,7 @@ const entities = {
   rag: {
     name: "Rock & Ghoul",
     scene: `<span class="scene-tag">rock_and_ghoul.mp4</span>
-      <div class="viewport"><video src="assets/rock-and-ghoul.mp4" poster="assets/rock-and-ghoul-poster.jpg" autoplay muted loop playsinline aria-label="Rock & Ghoul combat: shield, ice spell, melee and fire attacks"></video><span class="gizmo"></span></div>`,
+      <div class="viewport"><video src="assets/rock-and-ghoul.mp4" poster="assets/rock-and-ghoul-poster.jpg" autoplay muted loop playsinline controls aria-label="Rock & Ghoul gameplay showcase"></video><span class="gizmo"></span></div>`,
     components: [
       { title: "Project", fields: [
         ["Type", "2D action game, own C++ engine"],
@@ -94,7 +94,7 @@ const entities = {
       { title: "Links", links: [["Code and write-up", "https://github.com/t-jq-digipen/Rock-and-Ghoul"]] }
     ],
     assets: [
-      { name: "Combat clip", type: "video", src: "assets/rock-and-ghoul.mp4", poster: "assets/rock-and-ghoul-poster.jpg" },
+      { name: "Gameplay showcase", type: "video", src: "assets/rock-and-ghoul.mp4", poster: "assets/rock-and-ghoul-poster.jpg" },
       { folder: "Animation drafts", notes: ["Minimal drafts, just to help convey the direction we wanted", "Made in Clip Studio Paint", "Final art completed by our artist"], items: [
         { name: "Sound travelling across floor before erupting", type: "image", src: "assets/rag/drafts/sound-across-floor.gif", frames: 16 },
         { name: "Sound blast around player", type: "image", src: "assets/rag/drafts/sound-blast-around-player.gif", frames: 13 },
@@ -108,7 +108,7 @@ const entities = {
   parkourier: {
     name: "ParKourier",
     scene: `<span class="scene-tag">parkourier_walkthrough.mp4</span>
-      <div class="viewport"><video src="assets/parkourier/walkthrough.mp4" poster="assets/parkourier/walkthrough-poster.jpg" autoplay muted loop playsinline aria-label="ParKourier walkthrough: sprinting, sliding, wall running and climbing across whitebox rooftops"></video><span class="gizmo"></span></div>`,
+      <div class="viewport"><video src="assets/parkourier/walkthrough.mp4" poster="assets/parkourier/walkthrough-poster.jpg" autoplay muted loop playsinline controls aria-label="ParKourier walkthrough: sprinting, sliding, wall running and climbing across whitebox rooftops"></video><span class="gizmo"></span></div>`,
     components: [
       { title: "Project", fields: [
         ["Type", "First-person parkour level, whitebox prototype"],
