@@ -322,6 +322,8 @@
     @keyframes settle { from { opacity: .3; transform: scale(.985); } to { opacity: 1; transform: none; } }
   }
 </style>
+<!-- Visitor stats (GoatCounter: no cookies, doesn't count localhost) -->
+<script data-goatcounter="https://tjquan.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
 </head>
 <body>
 
@@ -684,6 +686,8 @@ function startHud(a) {
 }
 
 function select(id) {
+  // log each project opened as a GoatCounter event (skips the landing page and re-selecting the same project)
+  if (id !== current && id !== "me") window.goatcounter?.count?.({ path: "project-" + id, title: entities[id].name, event: true });
   current = id;
   const e = entities[id];
   document.querySelectorAll(".tree button").forEach(b => b.setAttribute("aria-selected", b.dataset.entity === id));
